@@ -1,0 +1,69 @@
+import requests
+from bs4 import BeautifulSoup
+
+# HTTP headers that allow our scraper to appear more "human"
+headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:78.0)   Gecko/20100101 Firefox/78.0", 
+"Referer": "https://www.google.com"}
+
+# URL showing AAA collections
+url = "https://www.aaa.si.edu/search/collections?edan_fq%5B1%5D=p.edanmdm.descriptivenonrepeating.record_id%3AAAADCD_coll_%2A&stype=search-collections&page="
+
+# CHANGE this variable if more search result pages have been added
+# To check, go to "https://www.aaa.si.edu/search/collections?edan_fq%5B1%5D=p.edanmdm.descriptivenonrepeating.record_id%3AAAADCD_coll_%2A&stype=search-collections&page="
+search_results_page_end = 540
+
+filename = 'collection-titles.txt'
+
+
+'''
+This is a function that takes the full collections page url and grabs the
+title of each collection.
+
+Returns list of collection titles.
+
+'''
+def download_json(url):
+
+    # Create empty list of titles
+    titles = []
+
+    # Loop through search results pages
+    for page in range(1, search_results_page_end):
+
+        # For each page, create request
+        r = requests.get(url + str(page), headers=headers)
+        # Progress check
+        print(r.status_code, r.url)
+
+        # Create beautiful soup object to parse through HTML
+        soup = BeautifulSoup(r.text, 'html.parser')
+
+        # Find container that holds titles
+        titles_full_block = soup.find_all('h3', class_ = 'title')
+
+        # Loop through titles container
+        for t in titles_full_block:
+            # Add each title to list of titles
+            titles.append(t.text.strip())
+
+    # Return list of titles
+    return titles
+
+
+'''
+This is a function that takes a list of titles and writes
+them to a text file, where titles is the list of files and file
+is the name of the file to write to.
+
+'''
+def write_titles_to_text_file(titles, file):
+    # Open file
+    with open(file, 'w', encoding='utf-8') as f:
+        # Loop through titles
+        for t in titles:
+            # Write each title to file
+            f.write(t + '\n')
+
+# Call our functions!
+titles = download_json(url)
+write_titles_to_text_file(titles, filename)
